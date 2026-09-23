@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> 藍京軟體工作室 </title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome 圖示庫 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f3f4f6;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        /* 懸浮效果與過渡動畫 */
+        .card-hover {
+            transition: all 0.25s ease-in-out;
+        }
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+        /* 圖片容器懸停效果 */
+        .preview-container:hover .preview-overlay {
+            opacity: 1;
+        }
+        /* 自訂滾動條 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen text-slate-800">
+
+    <!-- 1. 頂部導覽列 Header -->
+    <header class="bg-[#1e293b] text-white sticky top-0 z-50 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <!-- 網站標題 -->
+            <div class="flex items-center space-x-3">
+                <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-white"> 藍京軟體工作室 </h1>
+            </div>
+
+            <!-- 右側導覽選單與搜尋 -->
+            <div class="flex items-center space-x-6">
+                <nav class="hidden md:flex space-x-6 text-sm font-medium">
+                    <a href="#" class="text-white hover:text-blue-400 transition-colors">首頁</a>
+                    <a href="#portfolio" class="text-slate-300 hover:text-white transition-colors">軟體列表</a>
+                    <a href="#" class="text-slate-300 hover:text-white transition-colors">關於我</a>
+                    <a href="#" class="text-slate-300 hover:text-white transition-colors">聯絡</a>
+                </nav>
+                <div class="relative">
+                    <input type="text" id="searchInput" placeholder="搜尋專案..." 
+                           class="bg-slate-700/60 text-sm text-white placeholder-slate-400 rounded-full pl-9 pr-4 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 w-36 sm:w-48 transition-all">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-400"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主體內容容器 Main -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8" id="portfolio">
+        
+        <!-- 2. 工具列 (標題與排序切換) -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-8 pb-4 border-b border-slate-200 gap-4">
+            <div>
+                <h2 class="text-xl sm:text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    我的軟體專案連結 - 全部 <span id="projectCount" class="text-blue-600">(11)</span>
+                </h2>
+            </div>
+
+            <!-- 排序按鈕組 -->
+            <div class="flex items-center bg-slate-200/80 p-1 rounded-lg text-xs font-semibold text-slate-600 self-start sm:self-auto">
+                <button id="sortByDateBtn" onclick="setSort('date')" 
+                        class="px-4 py-1.5 rounded-md bg-blue-600 text-white shadow-sm transition-all">
+                    按時間
+                </button>
+                <button id="sortByTypeBtn" onclick="setSort('type')" 
+                        class="px-4 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition-all">
+                    按類型
+                </button>
+            </div>
+        </div>
+
+        <!-- 3. 卡片列表網格 (Grid Layout) -->
+        <div id="projectsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- 專案卡片將由 JavaScript 動態渲染出來 -->
+        </div>
+
+    </main>
+
+    <!-- 4. 頁尾 Footer -->
+    <footer class="bg-white border-t border-slate-200 py-6 mt-12 text-center text-sm text-slate-500">
+        <div class="max-w-7xl mx-auto px-4">
+            <p>© <span id="currentYear"></span> 藍京軟體工作室 | 版權所有</p>
+        </div>
+    </footer>
+
+    <!-- 5. 圖片/詳情 預覽 Modal 彈窗 -->
+    <div id="previewModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-2xl w-full p-6 shadow-2xl transform transition-all relative">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="flex items-center gap-3 mb-4">
+                <div id="modalIcon" class="w-10 h-10 rounded-lg flex items-center justify-center text-white text-lg font-bold"></div>
+                <div>
+                    <h3 id="modalTitle" class="text-xl font-bold text-slate-800"></h3>
+                    <p id="modalCategory" class="text-xs text-slate-500"></p>
+                </div>
+            </div>
+            <!-- Modal 內的圖片預覽 -->
+            <div class="rounded-lg mb-4 overflow-hidden border border-slate-200 shadow-sm flex items-center justify-center bg-slate-100 min-h-[250px]">
+                 <img id="modalImage" src="" alt="專案預覽圖" class="w-full h-auto object-cover max-h-[400px]">
+            </div>
+            <p id="modalDesc" class="text-slate-600 text-sm mb-6 leading-relaxed"></p>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-700 hover:bg-slate-50">關閉</button>
+                <a id="modalGithubLink" href="#" target="_blank" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm flex items-center gap-1.5">
+                    <i class="fa-brands fa-github"></i> 前往 GitHub
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. JavaScript 邏輯與資料 -->
+    <script>
+        // 為了展示小圖，我們在資料集加入 image 屬性。
+        // 請將 'https://placehold.co/600x400/...' 替換為您真實的圖片 URL
+        const projects = [
+            {
+                id: 'heartopia',
+                title: 'heartopia',
+                category: '遊戲 / 互動應用',
+                description: 'Heartopia 遊戲專案，包含互動玩法與邏輯架構。',
+                version: '2.1.0',
+                githubUrl: 'https://github.com/blueone1225/heartopia',
+                icon: 'fa-heart',
+                bgColor: 'bg-rose-500',
+                date: '2024-03-15',
+                typeGroup: 'Game',
+                image: 'https://placehold.co/600x400/ffe4e6/be123c?text=Heartopia'
+            },
+            {
+                id: 'edvan',
+                title: 'edvan',
+                category: '系統 / 應用工具',
+                description: 'Edvan 核心系統模組與自動化流程工具。',
+                version: '2.1.0',
+                githubUrl: 'https://github.com/blueone1225/edvan',
+                icon: 'fa-cube',
+                bgColor: 'bg-blue-600',
+                date: '2024-02-10',
+                typeGroup: 'Tool',
+                image: 'https://placehold.co/600x400/dbeafe/1d4ed8?text=Edvan'
+            },
+            {
+                id: 'try',
+                title: 'try',
+                category: '實驗性專案',
+                description: '演算法原型測試與概念驗證 (PoC) 專案。',
+                version: '2.1.0',
+                githubUrl: 'https://github.com/blueone1225/try',
+                icon: 'fa-flask',
+                bgColor: 'bg-amber-500',
+                date: '2024-01-20',
+                typeGroup: 'Test',
+                image: 'https://placehold.co/600x400/fef3c7/b45309?text=Try'
+            },
+            {
+                id: 'Mtion',
+                title: 'Mtion',
+                category: '動態 / 視覺應用',
+                description: 'Mtion 動態效能呈現與互動設計架構。',
+                version: '2.1.0',
+                githubUrl: 'https://github.com/blueone1225/Mtion',
+                icon: 'fa-bolt',
+                bgColor: 'bg-purple-600',
+                date: '2024-03-01',
+                typeGroup: 'UI',
+                image: 'https://placehold.co/600x400/f3e8ff/7e22ce?text=Mtion'
+            },
+            {
+                id: 'palgame',
+                title: 'palgame',
+                category: '遊戲開發',
+                description: 'PalGame 經典遊戲邏輯與地圖角色機制。',
+                version: '2.1.0',
+                githubUrl: 'https://github.com/blueone1225/palgame',
+                icon: 'fa-gamepad',
+                bgColor: 'bg-emerald-500',
+                date: '2023-11-12',
+                typeGroup: 'Game',
+                image: 'https://placehold.co/600x400/d1fae5/047857?text=PalGame'
+            },
+            {
+                id: 'PPG',
+                title: 'PPG',
+                category: '數據 / 演算法',
+                description: 'PPG 生理訊號數據處理與分析演算法。',
+                version: '2.1.0',
+                githubUrl: 'https://github.com/blueone1225/PPG',
+                icon: 'fa-wave-square',
+                bgColor: 'bg-cyan-600',
+                date: '2023-12-05',
+                typeGroup: 'Data',
+                image: 'https://placehold.co/600x400/cffafe/0e7490?text=PPG'
+            },
+            {
+                id: 'test',
+                title: 'test',
+                category: '測試專案',
+                description: '單元測試、整合測試與程式碼涵蓋率紀錄。',
+                version: '2.1.0',
+                githubUrl: 'https://github.com/blueone1225/test',
+                icon: 'fa-vial',
+                bgColor: 'bg-slate-600',
+                date: '2023-10-01',
+                typeGroup: 'Test',
+                image: 'https://placehold.co/600x400/f1f5f9/475569?text=Test'
+            },
+            {
+                id: 'litMAGICgame',
+                title: 'litMAGICgame',
+                category: '輕量化遊戲',
+                description: 'LitMAGIC Game - 結合神奇特效的輕量級前端遊戲。',
+                version: '2.1.0',
+                githubUrl: 'https://github.com/blueone1225/litMAGICgame',
+                icon: 'fa-wand-magic-sparkles',
+                bgColor: 'bg-indigo-600',
+                date: '2024-02-28',
+                typeGroup: 'Game',
+                image: 'https://placehold.co/600x400/e0e7ff/4338ca?text=LitMAGIC'
+            },
+            {
+                id: 'my-tech-site',
+                title: 'my-tech-site',
+                category: 'Web 網站',
+                description: '個人技術部落格與作品展示網站模組。',
+                version: '2.1.0',
+                githubUrl: 'https://github.com/blueone1225/my-tech-site',
+                icon: 'fa-globe',
+                bgColor: 'bg-teal-600',
+                date: '2024-03-10',
+                typeGroup: 'Web',
+                image: 'https://placehold.co/600x400/ccfbf1/0f766e?text=MyTechSite'
+            },
+            {
+                id: 'Biofi',
+                title: 'Biofi',
+                category: '生物資訊 / API',
+                description: 'Biofi 生物特徵識別與數據檢索介面。',
+                version: '2.1.0',
+                githubUrl: 'https://github.com/blueone1225/Biofi',
+                icon: 'fa-dna',
+                bgColor: 'bg-green-600',
+                date: '2024-01-15',
+                typeGroup: 'Data',
+                image: 'https://placehold.co/600x400/dcfce7/15803d?text=Biofi'
+            },
+            {
+                id: '0test',
+                title: '0test',
+                category: '基礎測試',
+                description: '核心環境建置與底層 API 測試工具。',
+                version: '2.1.0',
+                githubUrl: 'https://github.com/blueone1225/0test',
+                icon: 'fa-code',
+                bgColor: 'bg-orange-500',
+                date: '2023-09-15',
+                typeGroup: 'Test',
+                image: 'https://placehold.co/600x400/ffedd5/c2410c?text=0Test'
+            }
+        ];
+
+        let currentSort = 'date';
+        let currentQuery = '';
+
+        // 動態渲染卡片
+        function renderProjects() {
+            const grid = document.getElementById('projectsGrid');
+            grid.innerHTML = '';
+
+            // 篩選
+            let filtered = projects.filter(p => 
+                p.title.toLowerCase().includes(currentQuery.toLowerCase()) ||
+                p.category.toLowerCase().includes(currentQuery.toLowerCase()) ||
+                p.description.toLowerCase().includes(currentQuery.toLowerCase())
+            );
+
+            // 排序
+            if (currentSort === 'date') {
+                filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+            } else {
+                filtered.sort((a, b) => a.typeGroup.localeCompare(b.typeGroup));
+            }
+
+            // 更新計數
+            document.getElementById('projectCount').innerText = `(${filtered.length})`;
+
+            // 產生 HTML
+            filtered.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-xl shadow-sm border border-slate-200/80 p-4 flex flex-col justify-between card-hover';
+                
+                // 將圖片點擊與預覽按鈕綁定到 openModal 函式
+                card.innerHTML = `
+                    <div class="flex-grow">
+                        <!-- 卡片頂部：圖示 + 標題資訊 -->
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-lg ${item.bgColor} text-white flex items-center justify-center text-lg font-bold shadow-sm">
+                                    <i class="fa-solid ${item.icon}"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-slate-800 text-base leading-snug hover:text-blue-600 transition-colors">
+                                        <a href="${item.githubUrl}" target="_blank">${item.title}</a>
+                                    </h3>
+                                    <p class="text-xs text-slate-500 font-normal line-clamp-1">${item.category}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p class="text-xs text-slate-500 mb-3 line-clamp-2">${item.description}</p>
+                        
+                        <!-- 包含圖片的預覽區塊 -->
+                        <div class="preview-container relative rounded-lg mb-4 overflow-hidden group cursor-pointer border border-slate-200" onclick="openModal('${item.id}')">
+                            <!-- 模擬瀏覽器視窗頂部標籤列 -->
+                            <div class="bg-slate-800 px-2 py-1 flex items-center space-x-1">
+                                <div class="w-2 h-2 rounded-full bg-red-500"></div>
+                                <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
+                                <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                            </div>
+                            
+                            <!-- 專案圖片 -->
+                            <div class="h-32 bg-slate-100 flex items-center justify-center relative">
+                                <img src="${item.image}" alt="${item.title} 預覽圖" class="w-full h-full object-cover">
+                                
+                                <!-- 懸停時的覆蓋層與預覽按鈕 -->
+                                <div class="preview-overlay absolute inset-0 bg-slate-900/40 opacity-0 transition-opacity flex items-center justify-center backdrop-blur-sm">
+                                    <span class="bg-blue-600 text-white text-xs px-4 py-1.5 rounded-md font-medium shadow-lg flex items-center gap-2">
+                                        <i class="fa-solid fa-eye"></i> 大圖預覽
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 底部按鈕區 (移除下載，改為單一滿版按鈕連結至 GitHub) -->
+                    <div class="pt-2 mt-auto">
+                        <a href="${item.githubUrl}" target="_blank" 
+                           class="w-full bg-blue-50 hover:bg-blue-600 border border-blue-200 hover:border-blue-600 text-blue-700 hover:text-white text-sm py-2 px-4 rounded-lg font-medium flex items-center justify-center space-x-2 transition-all duration-200 group">
+                            <i class="fa-brands fa-github text-base group-hover:animate-bounce"></i>
+                            <span>前往 GitHub 專案頁面</span>
+                            <i class="fa-solid fa-arrow-right text-[10px] opacity-70"></i>
+                        </a>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // 切換排序
+        function setSort(type) {
+            currentSort = type;
+            const dateBtn = document.getElementById('sortByDateBtn');
+            const typeBtn = document.getElementById('sortByTypeBtn');
+
+            if (type === 'date') {
+                dateBtn.className = "px-4 py-1.5 rounded-md bg-blue-600 text-white shadow-sm transition-all";
+                typeBtn.className = "px-4 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition-all";
+            } else {
+                typeBtn.className = "px-4 py-1.5 rounded-md bg-blue-600 text-white shadow-sm transition-all";
+                dateBtn.className = "px-4 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition-all";
+            }
+            renderProjects();
+        }
+
+        // 開啟預覽彈窗 Modal
+        function openModal(id) {
+            const item = projects.find(p => p.id === id);
+            if (!item) return;
+
+            document.getElementById('modalTitle').innerText = item.title;
+            document.getElementById('modalCategory').innerText = item.category + ' • 版本 ' + item.version;
+            document.getElementById('modalDesc').innerText = item.description;
+            document.getElementById('modalGithubLink').href = item.githubUrl;
+            
+            // 更新 Modal 內的圖片
+            document.getElementById('modalImage').src = item.image;
+            document.getElementById('modalImage').alt = item.title + " 預覽大圖";
+
+            const modalIcon = document.getElementById('modalIcon');
+            modalIcon.className = `w-10 h-10 rounded-lg flex items-center justify-center text-white text-lg font-bold ${item.bgColor}`;
+            modalIcon.innerHTML = `<i class="fa-solid ${item.icon}"></i>`;
+
+            document.getElementById('previewModal').classList.remove('hidden');
+        }
+
+        // 關閉 Modal
+        function closeModal() {
+            document.getElementById('previewModal').classList.add('hidden');
+        }
+
+        // 搜尋監聽器
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            currentQuery = e.target.value;
+            renderProjects();
+        });
+
+        // 點擊 Modal 背景關閉
+        document.getElementById('previewModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // 初始化
+        document.getElementById('currentYear').innerText = new Date().getFullYear();
+        renderProjects();
+    </script>
+</body>
+</html>
